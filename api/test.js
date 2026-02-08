@@ -1,3 +1,7 @@
+// Simple test endpoint
 module.exports = (req, res) => {
-  res.json({ test: 'working', timestamp: new Date().toISOString() });
+  res.status(200).json({
+    status: "API directory works!",
+    timestamp: new Date().toISOString()
+  });
 };
