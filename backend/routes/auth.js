@@ -95,11 +95,26 @@ router.post('/signup', async (req, res) => {
 router.post('/login', async (req, res) => {
     try {
         const { username, password } = req.body;
+        console.log('Login attempt for username:', username);
 
         if (!username || !password) {
+            console.log('Missing username or password');
             return res.status(400).json({ error: 'Username and password required' });
         }
 
+        // Check if JWT_SECRET is set
+        if (!process.env.JWT_SECRET) {
+            console.error('FATAL: JWT_SECRET is not set!');
+            return res.status(500).json({ error: 'Server configuration error' });
+        }
+
+        // Check if database is available
+        if (!supabaseAdmin) {
+            console.error('FATAL: Database not configured!');
+            return res.status(500).json({ error: 'Database connection error' });
+        }
+
+        console.log('Querying database for user:', username);
         // Get user
         const { data: user, error } = await supabaseAdmin
             .from('users')
@@ -107,17 +122,26 @@ router.post('/login', async (req, res) => {
             .eq('username', username)
             .single();
 
-        if (error || !user) {
+        if (error) {
+            console.error('Database error:', error);
             return res.status(401).json({ error: 'Invalid credentials' });
         }
 
+        if (!user) {
+            console.log('User not found:', username);
+            return res.status(401).json({ error: 'Invalid credentials' });
+        }
+
+        console.log('User found, verifying password');
         // Verify password
         const validPassword = await bcrypt.compare(password, user.password_hash);
 
         if (!validPassword) {
+            console.log('Invalid password for user:', username);
             return res.status(401).json({ error: 'Invalid credentials' });
         }
 
+        console.log('Password valid, generating token');
         // Generate JWT
         const token = jwt.sign(
             { userId: user.id, username: user.username },
@@ -125,6 +149,7 @@ router.post('/login', async (req, res) => {
             { expiresIn: JWT_EXPIRATION }
         );
 
+        console.log('Login successful for user:', username);
         res.json({
             message: 'Login successful',
             token,
@@ -137,7 +162,11 @@ router.post('/login', async (req, res) => {
         });
     } catch (error) {
         console.error('Login error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        console.error('Error stack:', error.stack);
+        res.status(500).json({ 
+            error: 'Internal server error',
+            details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
     }
 });
 

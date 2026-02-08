@@ -1,11 +1,11 @@
 const express = require('express');
 const { supabaseAdmin } = require('../config/database');
-const { authenticateToken } = require('../middleware/auth');
+const { authenticate } = require('../middleware/auth');
 
 const router = express.Router();
 
 // Get user's team
-router.get('/my-team', authenticateToken, async (req, res) => {
+router.get('/my-team', authenticate, async (req, res) => {
   try {
     const userId = req.user.userId;
 
@@ -86,7 +86,7 @@ router.get('/my-team', authenticateToken, async (req, res) => {
 });
 
 // Save team
-router.post('/save', authenticateToken, async (req, res) => {
+router.post('/save', authenticate, async (req, res) => {
   try {
     const userId = req.user.userId;
     const { team_name, players } = req.body;
