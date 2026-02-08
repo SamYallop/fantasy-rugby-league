@@ -1,0 +1,45 @@
+name: Weekly Stats Scraper
+
+on:
+  schedule:
+    # Run every Monday at 11:00 PM UK time (23:00 UTC)
+    - cron: '0 23 * * 1'
+  
+  # Allow manual trigger from GitHub UI
+  workflow_dispatch:
+
+jobs:
+  scrape-and-upload:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+      
+      - name: Install dependencies
+        run: |
+          cd scraper
+          npm install
+      
+      - name: Run automated scraper
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: |
+          cd scraper
+          node scrape_and_upload_automated.js
+      
+      - name: Upload logs
+        if: always()
+        run: |
+          if [ $? -eq 0 ]; then
+            echo "✅ Scraper completed successfully"
+          else
+            echo "❌ Scraper failed - check logs above"
+            exit 1
+          fi
