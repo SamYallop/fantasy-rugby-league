@@ -68,6 +68,20 @@ app.get('/health', (req, res) => {
     });
 });
 
+// Diagnostic endpoint
+app.get('/debug', (req, res) => {
+    res.json({
+        env_vars: {
+            SUPABASE_URL: !!process.env.SUPABASE_URL,
+            SUPABASE_KEY: !!process.env.SUPABASE_KEY,
+            SUPABASE_SERVICE_KEY: !!process.env.SUPABASE_SERVICE_KEY,
+            JWT_SECRET: !!process.env.JWT_SECRET,
+            NODE_ENV: process.env.NODE_ENV || 'not set'
+        },
+        timestamp: new Date().toISOString()
+    });
+});
+
 // Root endpoint
 app.get('/', (req, res) => {
     res.json({ 

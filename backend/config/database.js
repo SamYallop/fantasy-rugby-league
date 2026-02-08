@@ -6,40 +6,44 @@ const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_KEY;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
 
-if (!SUPABASE_URL) {
-    console.error('❌ FATAL: SUPABASE_URL environment variable is missing');
-    console.error('Please set it in your Vercel environment variables');
+let supabase = null;
+let supabaseAdmin = null;
+
+try {
+  if (!SUPABASE_URL) {
+    console.error('❌ SUPABASE_URL missing');
+  }
+  
+  if (!SUPABASE_KEY) {
+    console.error('❌ SUPABASE_KEY missing');
+  }
+  
+  if (!SUPABASE_SERVICE_KEY) {
+    console.warn('⚠️  SUPABASE_SERVICE_KEY missing - using SUPABASE_KEY as fallback');
+  }
+  
+  // Create Supabase client for general use
+  if (SUPABASE_URL && SUPABASE_KEY) {
+    supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+  }
+  
+  // Create Supabase admin client (bypasses RLS)
+  if (SUPABASE_URL && (SUPABASE_SERVICE_KEY || SUPABASE_KEY)) {
+    supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY || SUPABASE_KEY);
+  }
+} catch (error) {
+  console.error('Failed to initialize Supabase:', error);
 }
-
-if (!SUPABASE_KEY) {
-    console.error('❌ FATAL: SUPABASE_KEY environment variable is missing');
-    console.error('Please set it in your Vercel environment variables');
-}
-
-if (!SUPABASE_SERVICE_KEY) {
-    console.error('⚠️  WARNING: SUPABASE_SERVICE_KEY environment variable is missing');
-    console.error('Using SUPABASE_KEY as fallback (may have limited permissions)');
-}
-
-// Create Supabase client for general use
-const supabase = SUPABASE_URL && SUPABASE_KEY 
-    ? createClient(SUPABASE_URL, SUPABASE_KEY)
-    : null;
-
-// Create Supabase admin client (bypasses RLS)
-const supabaseAdmin = SUPABASE_URL && (SUPABASE_SERVICE_KEY || SUPABASE_KEY)
-    ? createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY || SUPABASE_KEY)
-    : null;
 
 // Helper to check if database is configured
 function isDatabaseConfigured() {
-    return !!(SUPABASE_URL && SUPABASE_KEY);
+    return !!(supabase && supabaseAdmin);
 }
 
 // Helper to throw error if database is not configured
 function requireDatabase() {
     if (!isDatabaseConfigured()) {
-        throw new Error('Database not configured. Please set SUPABASE_URL and SUPABASE_KEY environment variables.');
+        throw new Error('Database not configured. Check environment variables.');
     }
 }
 
