@@ -68,7 +68,7 @@ app.get('/health', (req, res) => {
     });
 });
 
-// Diagnostic endpoint - check environment
+// Diagnostic endpoint
 app.get('/debug/env', (req, res) => {
     res.json({
         env_vars: {
@@ -77,9 +77,6 @@ app.get('/debug/env', (req, res) => {
             SUPABASE_SERVICE_KEY: !!process.env.SUPABASE_SERVICE_KEY,
             JWT_SECRET: !!process.env.JWT_SECRET,
             NODE_ENV: process.env.NODE_ENV || 'not set'
-        },
-        urls: {
-            SUPABASE_URL: process.env.SUPABASE_URL ? process.env.SUPABASE_URL.substring(0, 30) + '...' : 'not set'
         },
         timestamp: new Date().toISOString()
     });

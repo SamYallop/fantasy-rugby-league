@@ -95,26 +95,25 @@ router.post('/signup', async (req, res) => {
 router.post('/login', async (req, res) => {
     try {
         const { username, password } = req.body;
-        console.log('Login attempt for username:', username);
+        console.log('Login attempt for:', username);
 
         if (!username || !password) {
-            console.log('Missing username or password');
+            console.log('Missing credentials');
             return res.status(400).json({ error: 'Username and password required' });
         }
 
-        // Check if JWT_SECRET is set
+        // Check environment
         if (!process.env.JWT_SECRET) {
-            console.error('FATAL: JWT_SECRET is not set!');
+            console.error('FATAL: JWT_SECRET not set');
             return res.status(500).json({ error: 'Server configuration error' });
         }
 
-        // Check if database is available
         if (!supabaseAdmin) {
-            console.error('FATAL: Database not configured!');
-            return res.status(500).json({ error: 'Database connection error' });
+            console.error('FATAL: Database not configured');
+            return res.status(500).json({ error: 'Database error' });
         }
 
-        console.log('Querying database for user:', username);
+        console.log('Querying database...');
         // Get user
         const { data: user, error } = await supabaseAdmin
             .from('users')
@@ -128,20 +127,20 @@ router.post('/login', async (req, res) => {
         }
 
         if (!user) {
-            console.log('User not found:', username);
+            console.log('User not found');
             return res.status(401).json({ error: 'Invalid credentials' });
         }
 
-        console.log('User found, verifying password');
+        console.log('User found, checking password...');
         // Verify password
         const validPassword = await bcrypt.compare(password, user.password_hash);
 
         if (!validPassword) {
-            console.log('Invalid password for user:', username);
+            console.log('Invalid password');
             return res.status(401).json({ error: 'Invalid credentials' });
         }
 
-        console.log('Password valid, generating token');
+        console.log('Generating token...');
         // Generate JWT
         const token = jwt.sign(
             { userId: user.id, username: user.username },
@@ -149,7 +148,7 @@ router.post('/login', async (req, res) => {
             { expiresIn: JWT_EXPIRATION }
         );
 
-        console.log('Login successful for user:', username);
+        console.log('Login successful!');
         res.json({
             message: 'Login successful',
             token,
@@ -162,11 +161,8 @@ router.post('/login', async (req, res) => {
         });
     } catch (error) {
         console.error('Login error:', error);
-        console.error('Error stack:', error.stack);
-        res.status(500).json({ 
-            error: 'Internal server error',
-            details: process.env.NODE_ENV === 'development' ? error.message : undefined
-        });
+        console.error('Stack:', error.stack);
+        res.status(500).json({ error: 'Internal server error' });
     }
 });
 
